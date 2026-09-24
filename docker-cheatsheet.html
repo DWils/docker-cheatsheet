@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aide-mémoire Docker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f14;
+    --surface: #101820;
+    --surface-2: #141d27;
+    --border: #202b36;
+    --text: #dce3ea;
+    --text-muted: #7c8b99;
+    --text-faint: #4d5a67;
+
+    --c-docker: #58a6ff;   /* la commande racine "docker" */
+    --c-sub:    #ffa657;   /* le sous-verbe (ps, run, build...) */
+    --c-flag:   #d2a8ff;   /* les options (-a, -p, --name...) */
+    --c-value:  #7ee787;   /* placeholders / valeurs (<container>, ports...) */
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --border: #dbe1e7;
+    --text: #131a22;
+    --text-muted: #5b6874;
+    --text-faint: #98a3ad;
+
+    --c-docker: #0969da;
+    --c-sub:    #bc4c00;
+    --c-flag:   #8250df;
+    --c-value:  #1a7f37;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 48px 20px 0;
+  }
+
+  header {
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 600;
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h1 .prompt { color: var(--text-faint); margin-right: 10px; }
+  header p.lead {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.98rem;
+    max-width: 62ch;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 48px;
+    margin-top: 22px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.98rem;
+    color: var(--text-muted);
+  }
+  .swatch {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    flex: none;
+  }
+
+  section.group {
+    margin-top: 40px;
+  }
+  section.group h2 {
+    font-size: 0.78rem;
+    text-transform: none;
+    letter-spacing: 0.01em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .cmd-row {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 0.74rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .copy-btn:hover {
+    color: var(--text);
+    border-color: var(--c-flag);
+  }
+  .copy-btn.copied {
+    color: var(--c-value);
+    border-color: var(--c-value);
+  }
+  .cmd-row code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .desc {
+    padding: 12px 18px 16px;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+  }
+  .desc strong { color: var(--text); font-weight: 500; }
+  .desc .note {
+    display: block;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    color: var(--c-sub);
+    font-size: 0.87rem;
+  }
+
+  .docker  { color: var(--c-docker); font-weight: 500; }
+  .sub     { color: var(--c-sub); font-weight: 500; }
+  .flag    { color: var(--c-flag); }
+  .value   { color: var(--c-value); }
+  .plain   { color: var(--text); }
+  .pipe    { color: var(--text-faint); }
+
+  footer {
+    margin-top: 44px;
+    padding: 18px 0 30px;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 32px 14px 0; }
+    .cmd-row { padding: 12px 14px; }
+    .desc { padding: 10px 14px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="prompt">$</span>Aide-mémoire Docker</h1>
+    <p class="lead">Les commandes essentielles, groupées par usage. Chaque partie d'une commande garde toujours la même couleur pour qu'on la repère d'un coup d'œil.</p>
+
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="background:var(--c-docker)"></span>commande racine</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-sub)"></span>sous-commande</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-flag)"></span>option / flag</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--c-value)"></span>valeur à remplacer</div>
+    </div>
+  </header>
+
+  <section class="group">
+    <h2>Conteneurs et images — les bases</h2>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span></code>
+      </div>
+      <div class="desc">Liste les conteneurs <strong>actifs</strong>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span> <span class="flag">-a</span></code>
+      </div>
+      <div class="desc">Liste <strong>tous</strong> les conteneurs, y compris ceux arrêtés (utile pour les redémarrer).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">start</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Démarre un conteneur arrêté.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">stop</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Arrête un conteneur en cours d'exécution.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">rm</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Supprime un conteneur.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">exec</span> <span class="flag">-it</span> <span class="value">&lt;container&gt;</span> <span class="value">bash</span></code>
+      </div>
+      <div class="desc">Ouvre un terminal interactif <strong>à l'intérieur</strong> d'un conteneur déjà en cours d'exécution (<code>-i</code> = interactif, <code>-t</code> = alloue un pseudo-terminal). Utile pour inspecter le conteneur ou y lancer une commande ponctuelle.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">inspect</span> <span class="value">&lt;container&gt;</span> <span class="pipe">|</span> <span class="value">less</span></code>
+      </div>
+      <div class="desc">Affiche tous les détails d'un conteneur au format JSON (configuration, réseau, montages, variables d'environnement…). Fonctionne aussi sur une image, un volume ou un réseau. <code>| less</code> permet de parcourir une sortie longue page par page.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="plain">docker exec -it mysql-docker-container bash</span>   <span class="pipe"># 1. entre dans le conteneur</span><br><span class="plain">mysql -u root -p</span>                              <span class="pipe"># 2. lance le client MySQL (demande le mot de passe)</span><br><span class="plain">show databases;</span>                               <span class="pipe"># 3. liste les bases présentes</span><br><span class="plain">exit</span>                                          <span class="pipe"># 4. quitte le client mysql</span><br><span class="plain">exit</span>                                          <span class="pipe"># 5. quitte le shell bash du conteneur</span></code>
+      </div>
+      <div class="desc">Exemple complet : se connecter à une base MySQL qui tourne dans un conteneur, l'interroger, puis ressortir proprement.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Crée un <strong>nouveau conteneur</strong> à partir de l'image et le démarre (télécharge l'image si elle n'est pas déjà en local).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">images</span></code>
+      </div>
+      <div class="desc">Liste les images présentes en local.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">rmi</span> <span class="value">&lt;image_ou_id&gt;</span></code>
+      </div>
+      <div class="desc">Supprime une image.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">pull</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Télécharge une image depuis un registre (ex. Docker Hub), sans créer de conteneur.</div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Options avancées de <code style="font-family:inherit">run</code></h2>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Publie un port : <strong>hôte:conteneur</strong>. Le port de gauche est celui exposé sur la machine hôte.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">&lt;nom&gt;</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Nomme le conteneur au lieu d'un nom aléatoire généré automatiquement. Ce nom sert ensuite directement pour <code>stop</code>, <code>start</code> et <code>rm</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Lance le conteneur en mode <strong>détaché</strong> (arrière-plan) : le terminal reste libre.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-e</span> <span class="value">VAR=valeur</span></code>
+      </div>
+      <div class="desc">Définit une variable d'environnement dans le conteneur. Répétable pour en passer plusieurs (ex. <code>MYSQL_ROOT_PASSWORD</code>, <code>MYSQL_DATABASE</code>, <code>MYSQL_USER</code>, <code>MYSQL_PASSWORD</code> pour une image MySQL).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">host</span></code>
+      </div>
+      <div class="desc">Fait partager au conteneur la pile réseau de la machine hôte : pas d'IP propre, les ports du conteneur sont directement ceux de l'hôte (rend <code>-p</code> inutile).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="value">&lt;image&gt;</span> <span class="flag">--arg=valeur</span></code>
+      </div>
+      <div class="desc">Ce qui suit le nom de l'image est passé en argument à l'<strong>application</strong> dans le conteneur, pas à Docker. Ex. <code>--spring.profiles.active=prod</code> active un profil Spring Boot.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">--name</span> <span class="value">mon-conteneur</span> <span class="flag">-d</span> <span class="value">mon-image:1.0.0</span></code>
+      </div>
+      <div class="desc">Exemple combinant les options ci-dessus.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-e</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span> <span class="flag">-e</span> <span class="value">MYSQL_DATABASE=my_database</span> <span class="flag">-e</span> <span class="value">MYSQL_USER=app_user</span> <span class="flag">-e</span> <span class="value">MYSQL_PASSWORD=app_password</span> <span class="flag">--network</span> <span class="value">host</span> <span class="value">mysql:latest</span></code>
+      </div>
+      <div class="desc">Exemple : lance MySQL avec ses identifiants et sa base initiale, en réseau hôte.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">rm</span> <span class="value">mon-service</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="value">mon-service:2.0.0</span> <span class="flag">--spring.profiles.active=prod</span></code>
+      </div>
+      <div class="desc">Exemple : remplace un conteneur existant par une nouvelle version de l'image, avec un profil Spring actif.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=&lt;profil&gt;</span></code>
+      </div>
+      <div class="desc">Variable d'environnement reconnue par Spring Boot : active un profil (ex. <code>test</code>, <code>prod</code>). Équivalent à passer <code>--spring.profiles.active=&lt;profil&gt;</code> en argument après l'image — deux façons de faire la même chose.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">build</span> <span class="flag">-f</span> <span class="value">Dockerfile-name</span> <span class="flag">-t</span> <span class="value">mon-service:2.0.1</span> <span class="plain">.</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=test</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : builder depuis un Dockerfile spécifique, puis lancer avec un profil de test.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-e</span> <span class="value">server.port=&lt;port&gt;</span></code>
+      </div>
+      <div class="desc">Redéfinit une propriété Spring Boot (ici <code>server.port</code>) via une variable d'environnement nommée exactement comme la propriété. Spring la reconnaît directement, sans passer par la forme habituelle <code>SERVER_PORT</code>. Le port choisi doit correspondre au port conteneur donné à <code>-p</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="flag">-p</span> <span class="value">8081:8081</span> <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=test</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : port et profil définis via des variables d'environnement (le port doit être cohérent avec <code>-p</code>).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--env-file</span> <span class="value">&lt;fichier&gt;</span></code>
+      </div>
+      <div class="desc">Charge toutes les variables d'environnement depuis un fichier (une par ligne, format <code>VAR=valeur</code>), au lieu de les lister une par une avec plusieurs <code>-e</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-p</span> <span class="value">8081:8081</span> <span class="flag">--env-file</span> <span class="value">environment.env</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : charger les variables depuis un fichier plutôt que de les passer une à une.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span></code>
+      </div>
+      <div class="desc">Supprime automatiquement le conteneur dès qu'il s'arrête. Évite d'accumuler des conteneurs arrêtés, pratique pour un test ponctuel.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span> <span class="value">alpine</span></code>
+      </div>
+      <div class="desc">Exemple : lance un conteneur jetable, supprimé automatiquement à la sortie.</div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Build et gestion des images</h2>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">build</span> <span class="flag">-t</span> <span class="value">nom:version</span> <span class="plain">.</span></code>
+      </div>
+      <div class="desc">Construit une image depuis le Dockerfile du dossier courant, et la nomme (tag <code>nom:version</code>).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">build</span> <span class="flag">-f</span> <span class="value">&lt;Dockerfile&gt;</span> <span class="flag">-t</span> <span class="value">nom:version</span> <span class="plain">.</span></code>
+      </div>
+      <div class="desc">Précise le fichier à utiliser comme Dockerfile (utile s'il y en a plusieurs, ex. un fichier <code>Dockerfile-name</code>). Sans <code>-f</code>, Docker cherche un fichier nommé <code>Dockerfile</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">image</span> <span class="sub">prune</span> <span class="flag">-a</span></code>
+      </div>
+      <div class="desc">Supprime toutes les images <strong>non utilisées par un conteneur</strong> en une seule fois.
+        <span class="note">Précision : sans <code>-a</code>, seules les images « dangling » (sans tag) sont supprimées. Avec <code>-a</code>, toute image non référencée par un conteneur part aussi — ce n'est pas littéralement « toutes les images » du système.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Filtrage et nettoyage</h2>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span> <span class="flag">-a</span> <span class="flag">--filter</span> <span class="value">"clé=valeur"</span></code>
+      </div>
+      <div class="desc">Liste les conteneurs en appliquant un filtre. Répéter <code>--filter</code> combine les filtres (ET logique).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span> <span class="flag">-a</span> <span class="flag">--filter</span> <span class="value">"ancestor=mon-service:2.0.0"</span></code>
+      </div>
+      <div class="desc">Filtre les conteneurs créés à partir de l'image <code>mon-service:2.0.0</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span> <span class="flag">-a</span> <span class="flag">--filter</span> <span class="value">"status=exited"</span></code>
+      </div>
+      <div class="desc">Filtre les conteneurs arrêtés.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="pipe">... -q |</span> <span class="sub">xargs</span> <span class="docker">docker</span> <span class="sub">rm</span></code>
+      </div>
+      <div class="desc">Ajouté à la suite d'un filtrage : supprime en une fois tous les conteneurs correspondants (<code>-q</code> ne renvoie que les IDs, <code>xargs</code> les passe un à un à <code>docker rm</code>).</div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Logs</h2>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">logs</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Affiche les logs du conteneur.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">logs</span> <span class="flag">-f</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Affiche les logs en continu (« follow »), utile pour suivre l'activité en direct.</div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Volumes</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Un volume nommé permet de conserver les données d'un conteneur même s'il est supprimé (contrairement au système de fichiers du conteneur, qui disparaît avec lui). Docker le stocke sur l'hôte, dans <code>/var/lib/docker/volumes/&lt;nom&gt;/_data</code>.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">create</span> <span class="value">&lt;nom&gt;</span></code>
+      </div>
+      <div class="desc">Crée un volume nommé, géré par Docker.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">&lt;volume&gt;:&lt;chemin_conteneur&gt;</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Monte le volume à l'emplacement indiqué dans le conteneur.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">ls</span></code>
+      </div>
+      <div class="desc">Liste tous les volumes existants sur la machine.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">inspect</span> <span class="value">&lt;volume&gt;</span></code>
+      </div>
+      <div class="desc">Affiche le détail d'un volume au format JSON : date de création, driver, point de montage sur l'hôte (<code>Mountpoint</code>), etc. Pour un volume anonyme, le label <code>com.docker.volume.anonymous</code> confirme qu'il n'a pas de nom choisi.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">create</span> <span class="value">app-data</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">app-data:/my-app/data</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : crée le volume <code>app-data</code> puis le monte dans le conteneur.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Volume anonyme</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Si on ne précise que le chemin dans le conteneur (sans nom ni chemin hôte avant les deux-points), Docker crée quand même un volume — mais avec un identifiant généré automatiquement plutôt qu'un nom choisi. Il est donc plus difficile à retrouver et à réutiliser ensuite qu'un volume nommé.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">&lt;chemin_conteneur&gt;</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Crée un volume anonyme (nom généré par Docker) et le monte à ce chemin.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">/my-app/data</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : Docker crée et gère seul le volume, sans nom choisi.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Bind mount</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Autre façon de monter des données : au lieu d'un volume géré par Docker, on relie directement un dossier de la machine hôte au conteneur. C'est vous qui choisissez et gérez cet emplacement (pratique en développement pour accéder directement aux fichiers), contrairement au volume nommé dont l'emplacement est géré par Docker.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">&lt;chemin_hôte&gt;:&lt;chemin_conteneur&gt;</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Monte un dossier de l'hôte (chemin absolu ou relatif) directement dans le conteneur.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">~/mon-app/data:/my-app/data</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : monte le dossier <code>~/mon-app/data</code> de l'hôte dans le conteneur.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">tmpfs mount (Linux uniquement)</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Monte un dossier directement en mémoire vive de l'hôte : rien n'est jamais écrit sur disque, les données disparaissent à l'arrêt du conteneur et ne sont partagées ni avec l'hôte ni avec d'autres conteneurs. Utile pour des fichiers temporaires ou sensibles (logs éphémères, caches).</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--tmpfs</span> <span class="value">&lt;chemin_conteneur&gt;</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Monte le chemin donné en mémoire (tmpfs), Linux uniquement.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--tmpfs</span> <span class="value">/app/logs</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : les logs de l'application vivent en mémoire, jamais sur disque.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Astuce : inspecter le contenu d'un volume</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">On peut monter un volume existant dans un conteneur jetable, juste pour regarder ce qu'il contient, sans toucher au conteneur qui l'utilise habituellement.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span> <span class="flag">-it</span> <span class="flag">-v</span> <span class="value">app-data:/data</span> <span class="value">alpine</span> <span class="value">sh</span></code>
+      </div>
+      <div class="desc"><code>--rm</code> supprime ce conteneur temporaire à la sortie, <code>-it</code> ouvre un shell interactif, et <code>alpine</code> est une image minimale pratique pour ce genre d'exploration ponctuelle. Une fois dedans, <code>ls /data</code> montre le contenu du volume.</div>
+    </div>
+  </section>
+
+  <footer>Aide-mémoire personnel — à garder sous la main</footer>
+</div>
+<script>
+  function copyCmd(btn) {
+    var row = btn.closest('.cmd-row');
+    var codeEl = row.querySelector('code');
+    var text = codeEl.innerText || codeEl.textContent;
+
+    function showCopied() {
+      var original = btn.textContent;
+      btn.textContent = 'Copié !';
+      btn.classList.add('copied');
+      setTimeout(function () {
+        btn.textContent = original;
+        btn.classList.remove('copied');
+      }, 1500);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(function () {
+        fallbackCopy(text, showCopied);
+      });
+    } else {
+      fallbackCopy(text, showCopied);
+    }
+  }
+
+  function fallbackCopy(text, onDone) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      onDone();
+    } catch (e) {
+      // silently ignore if copy truly isn't possible
+    }
+  }
+</script>
+</body>
+</html>
