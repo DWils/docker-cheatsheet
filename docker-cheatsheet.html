@@ -216,7 +216,7 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">ps</span></code>
       </div>
-      <div class="desc">Liste les conteneurs <strong>actifs</strong>.</div>
+      <div class="desc">Liste les conteneurs <strong>actifs</strong>, avec pour chacun : ID, image, commande de démarrage, date de création, statut (ex. <code>Up 3 minutes</code>), ports publiés (ex. <code>0.0.0.0:8082-&gt;8082/tcp</code> = port hôte → port conteneur) et nom.</div>
     </div>
 
     <div class="card">
@@ -256,7 +256,9 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">exec</span> <span class="flag">-it</span> <span class="value">&lt;container&gt;</span> <span class="value">bash</span></code>
       </div>
-      <div class="desc">Ouvre un terminal interactif <strong>à l'intérieur</strong> d'un conteneur déjà en cours d'exécution (<code>-i</code> = interactif, <code>-t</code> = alloue un pseudo-terminal). Utile pour inspecter le conteneur ou y lancer une commande ponctuelle.</div>
+      <div class="desc">Ouvre un terminal interactif <strong>à l'intérieur</strong> d'un conteneur déjà en cours d'exécution (<code>-i</code> = interactif, <code>-t</code> = alloue un pseudo-terminal). Utile pour inspecter le conteneur ou y lancer une commande ponctuelle.
+        <span class="note">Conseil : les images minimales (ex. basées sur Alpine) n'ont souvent pas <code>bash</code> ; utilise alors <code>sh</code> : <code>docker exec -it &lt;container&gt; sh</code>. L'invite affichée (ex. <code>/app #</code>) indique le dossier de travail du conteneur.</span>
+      </div>
     </div>
 
     <div class="card">
@@ -559,7 +561,7 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">ls</span></code>
       </div>
-      <div class="desc">Liste tous les volumes existants sur la machine.</div>
+      <div class="desc">Liste tous les volumes existants sur la machine. Un volume nommé apparaît sous son nom (ex. <code>my-app-volume</code>) ; un volume anonyme apparaît sous un identifiant de 64 caractères généré par Docker.</div>
     </div>
 
     <div class="card">
@@ -573,9 +575,70 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
-        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">create</span> <span class="value">app-data</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">app-data:/my-app/data</span> <span class="value">mon-service:2.0.1</span></code>
+        <code><span class="docker">docker</span> <span class="sub">inspect</span> <span class="value">my-app-volume</span></code>
       </div>
-      <div class="desc">Exemple : crée le volume <code>app-data</code> puis le monte dans le conteneur.</div>
+      <div class="desc">Exemple : <code>docker inspect</code> fonctionne aussi directement sur un volume (même résultat que <code>docker volume inspect</code>). Le champ <code>Mountpoint</code> indique où sont stockées les données sur l'hôte, ici <code>/var/lib/docker/volumes/my-app-volume/_data</code>.
+        <span class="note">Conseil : avec Docker Desktop (Windows, macOS), ce chemin se trouve dans la machine virtuelle de Docker, pas directement sur ton disque. Pour voir le contenu, passe par un conteneur jetable (voir l'astuce en fin de section).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">create</span> <span class="value">my-app-volume</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">my-app-volume:/my-app/data</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : crée le volume <code>my-app-volume</code> puis le monte dans le conteneur.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=test</span> <span class="flag">-v</span> <span class="value">my-app-volume:/app/logs</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : <strong>attacher un volume existant à un nouveau conteneur</strong>. Le volume <code>my-app-volume</code> a déjà été créé (et éventuellement utilisé par un conteneur précédent) : le nouveau conteneur le monte sur <code>/app/logs</code> et retrouve les données qu'il contient déjà, puis y ajoute ses propres logs. Ici avec en plus un port publié, un conteneur nommé et le profil Spring <code>test</code>.
+        <span class="note">Conseil : si le nom de volume donné à <code>-v</code> n'existe pas encore, Docker le crée automatiquement (vide) au lieu de signaler une erreur. Vérifie l'orthographe avec <code>docker volume ls</code> pour être sûr de réutiliser le bon volume.</span>
+      </div>
+    </div>
+
+
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">rm</span> <span class="value">&lt;volume&gt;</span></code>
+      </div>
+      <div class="desc">Supprime un volume et <strong>toutes les données</strong> qu'il contient. Accepte un nom ou l'identifiant d'un volume anonyme, et plusieurs volumes à la suite.
+        <span class="note">Conseil : un volume utilisé par un conteneur, même arrêté, ne peut pas être supprimé. Supprime d'abord le conteneur avec <code>docker rm</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">volume</span> <span class="sub">rm</span> <span class="value">my-app-volume</span></code>
+      </div>
+      <div class="desc">Exemple : supprime le volume nommé <code>my-app-volume</code>. Vérifie ensuite avec <code>docker volume ls</code> qu'il n'apparaît plus dans la liste.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Volume nommé en lecture seule</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Un volume nommé peut être monté en <strong>lecture seule</strong> : le conteneur peut lire les fichiers, mais ne peut ni les modifier ni les supprimer. Utile pour garantir que des données (typiquement une configuration) ne changent pas pendant l'exécution.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-v</span> <span class="value">&lt;volume&gt;:&lt;chemin_conteneur&gt;</span><span class="flag">:ro</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Le suffixe <code>:ro</code> (<em>read-only</em>) à la fin de <code>-v</code> monte le volume en lecture seule. Sans suffixe, le volume est en lecture-écriture.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">-p</span> <span class="value">8080:8080</span> <span class="pipe">\</span><br>  <span class="flag">-v</span> <span class="value">tomcat-config:/usr/local/tomcat/conf</span><span class="flag">:ro</span> <span class="pipe">\</span><br>  <span class="flag">-v</span> <span class="value">tomcat-logs:/usr/local/tomcat/logs</span> <span class="pipe">\</span><br>  <span class="value">tomcat:latest</span></code>
+      </div>
+      <div class="desc">Exemple avec Tomcat : la configuration (<code>server.xml</code>, <code>tomcat-users.xml</code>, certificats TLS…) est montée en lecture seule pour éviter toute modification accidentelle ou non autorisée, tandis que le volume des logs reste en écriture pour que Tomcat puisse créer et mettre à jour ses fichiers de log. Le <code>\</code> en fin de ligne permet d'écrire une longue commande sur plusieurs lignes.
+        <span class="note">Conseil : les dossiers <code>logs</code>, <code>temp</code> et <code>work</code> doivent rester en écriture, Tomcat y écrit pendant l'exécution. Évite aussi <code>:ro</code> sur <code>webapps</code> : par défaut Tomcat y décompresse les WAR et fait du déploiement automatique. Pour le passer en lecture seule, il faut désactiver <code>unpackWARs</code> et l'auto-déploiement, ou déployer l'application déjà décompressée.</span>
+      </div>
     </div>
 
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Volume anonyme</h3>
@@ -616,6 +679,60 @@
       <div class="desc">Exemple : monte le dossier <code>~/mon-app/data</code> de l'hôte dans le conteneur.</div>
     </div>
 
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=test</span> <span class="flag">-v</span> <span class="value">"$(pwd)/my-app-logs:/app/logs"</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : les logs de l'application sont écrits directement dans le dossier <code>my-app-logs</code> du <strong>répertoire courant</strong> de l'hôte, consultables sans passer par Docker. <code>$(pwd)</code> est remplacé par le chemin absolu du dossier courant ; les guillemets protègent le chemin s'il contient des espaces. Si le dossier n'existe pas, <code>-v</code> le crée sur l'hôte.
+        <span class="note">Conseil : <code>$(pwd)</code> fonctionne sous Linux, macOS et Git Bash. En PowerShell, utilise <code>${PWD}</code> ; en invite de commandes Windows, <code>%cd%</code>. Sous Git Bash, si le chemin côté conteneur est mal converti (ex. <code>C:/Program Files/Git/app/logs</code>), préfixe la commande par <code>MSYS_NO_PATHCONV=1</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="plain">ls</span> <span class="value">my-app-logs</span>              <span class="pipe"># 1. le fichier de log (ex. mon-service.log) est visible sur l'hôte</span><br><span class="docker">docker</span> <span class="sub">stop</span> <span class="value">mon-service</span>    <span class="pipe"># 2. arrête le conteneur</span><br><span class="docker">docker</span> <span class="sub">rm</span> <span class="value">mon-service</span>      <span class="pipe"># 3. supprime le conteneur</span><br><span class="plain">ls</span> <span class="value">my-app-logs</span>              <span class="pipe"># 4. le fichier de log est toujours là</span></code>
+      </div>
+      <div class="desc">Vérification : les fichiers écrits par le conteneur dans un bind mount se trouvent directement dans le dossier de l'hôte et <strong>survivent à la suppression du conteneur</strong>. Un nouveau conteneur lancé avec le même <code>-v</code> les retrouvera.
+        <span class="note">Conseil : <code>docker rm -f mon-service</code> arrête et supprime le conteneur en une seule commande.</span>
+      </div>
+    </div>
+
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Bind mount pour un conteneur de base de données</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Cas d'usage courant : relier le dossier de données d'une base (ici MySQL) à un dossier de l'hôte, pour que les bases survivent à la suppression du conteneur et restent visibles directement sur l'hôte.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-mysql</span> <span class="flag">-e</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span> <span class="flag">-d</span> <span class="flag">-v</span> <span class="value">"$(pwd)/mysql-data:/var/lib/mysql"</span> <span class="value">mysql:9</span></code>
+      </div>
+      <div class="desc">Exemple : persister une base MySQL sur l'hôte. <code>/var/lib/mysql</code> est le dossier où MySQL stocke ses données ; en le reliant au dossier <code>mysql-data</code> du répertoire courant, les bases survivent à la suppression du conteneur et sont retrouvées par un nouveau conteneur lancé avec le même <code>-v</code>.
+        <span class="note">Conseil : au premier lancement, le dossier <code>mysql-data</code> doit être vide pour que MySQL initialise la base (le mot de passe root n'est pris en compte qu'à ce moment-là). Sous Windows et macOS, un volume nommé (<code>-v mysql-data:/var/lib/mysql</code>) est souvent plus rapide qu'un bind mount pour une base de données.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">exec</span> <span class="flag">-it</span> <span class="value">mon-mysql</span> <span class="value">sh</span>  <span class="pipe"># 1. entre dans le conteneur</span><br><span class="plain">mysql -u root -p</span>                      <span class="pipe"># 2. se connecte en root (demande le mot de passe)</span><br><span class="plain">show databases;</span>                       <span class="pipe"># 3. liste les bases existantes</span><br><span class="plain">create database ma_base;</span>              <span class="pipe"># 4. crée une nouvelle base</span><br><span class="plain">exit</span>                                  <span class="pipe"># 5. quitte le client mysql</span><br><span class="plain">exit</span>                                  <span class="pipe"># 6. quitte le shell du conteneur</span></code>
+      </div>
+      <div class="desc">Suite de l'exemple : créer une base dans le conteneur MySQL. Elle est écrite dans <code>/var/lib/mysql</code>, donc dans le dossier <code>mysql-data</code> de l'hôte. Après <code>docker rm -f mon-mysql</code> puis le même <code>docker run … -v "$(pwd)/mysql-data:/var/lib/mysql" …</code>, <code>show databases;</code> affiche toujours <code>ma_base</code> : les données ont survécu au conteneur.
+        <span class="note">Conseil : <code>docker exec -it mon-mysql mysql -u root -p</code> ouvre directement le client MySQL, sans passer par le shell du conteneur.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="plain">ls</span> <span class="value">mysql-data</span>   <span class="pipe"># sur l'hôte : un dossier par base + fichiers MySQL</span></code>
+      </div>
+      <div class="desc">Vérification côté hôte : le dossier <code>mysql-data</code> contient un sous-dossier par base (<code>ma_base</code>, <code>mysql</code>, <code>sys</code>, <code>performance_schema</code>) ainsi que les fichiers internes de MySQL (<code>ibdata1</code>, <code>binlog.*</code>, <code>undo_*</code>, certificats <code>*.pem</code>…). Relancer ensuite le même <code>docker run … -v "$(pwd)/mysql-data:/var/lib/mysql" mysql:9</code> redémarre MySQL sur ces données existantes.
+        <span class="note">Conseil : ne modifie pas ces fichiers à la main, et ne partage pas le même dossier entre deux conteneurs MySQL lancés en même temps : la base serait corrompue.</span>
+      </div>
+    </div>
+
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">tmpfs mount (Linux uniquement)</h3>
     <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Monte un dossier directement en mémoire vive de l'hôte : rien n'est jamais écrit sur disque, les données disparaissent à l'arrêt du conteneur et ne sont partagées ni avec l'hôte ni avec d'autres conteneurs. Utile pour des fichiers temporaires ou sensibles (logs éphémères, caches).</p>
 
@@ -630,9 +747,21 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
-        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--tmpfs</span> <span class="value">/app/logs</span> <span class="value">mon-service:2.0.1</span></code>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">--tmpfs</span> <span class="value">/app/logs</span> <span class="value">mon-service:2.0.1</span></code>
       </div>
-      <div class="desc">Exemple : les logs de l'application vivent en mémoire, jamais sur disque.</div>
+      <div class="desc">Exemple : l'application tourne normalement (port publié, conteneur nommé), mais ses logs dans <code>/app/logs</code> vivent en mémoire, jamais sur disque. Ils disparaissent dès que le conteneur s'arrête.
+        <span class="note">Conseil : « Linux uniquement » concerne les conteneurs Linux. Avec Docker Desktop sous Windows ou macOS, <code>--tmpfs</code> fonctionne aussi, car les conteneurs tournent dans une machine virtuelle Linux.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">ps</span>                           <span class="pipe"># 1. vérifie que le conteneur tourne</span><br><span class="docker">docker</span> <span class="sub">inspect</span> <span class="value">mon-service</span> <span class="pipe">|</span> <span class="value">less</span>  <span class="pipe"># 2. cherche HostConfig.Tmpfs dans le JSON</span><br><span class="docker">docker</span> <span class="sub">exec</span> <span class="flag">-it</span> <span class="value">mon-service</span> <span class="value">sh</span>  <span class="pipe"># 3. entre dans le conteneur</span><br><span class="plain">mount</span> <span class="pipe">|</span> <span class="plain">grep /app/logs</span>         <span class="pipe"># 4. affiche « tmpfs on /app/logs type tmpfs »</span><br><span class="plain">exit</span>                           <span class="pipe"># 5. quitte le conteneur</span></code>
+      </div>
+      <div class="desc">Vérification : dans la sortie de <code>docker inspect</code> (parcourue avec <code>less</code>), la section <code>HostConfig</code> contient <code>"Tmpfs": { "/app/logs": "" }</code>, ce qui confirme que ce chemin est monté en mémoire. À l'intérieur du conteneur, <code>mount</code> liste tous les points de montage : la ligne <code>tmpfs on /app/logs type tmpfs (rw,nosuid,nodev,noexec,relatime)</code> le confirme aussi. Les options entre parenthèses sont celles appliquées par défaut par <code>--tmpfs</code> : lecture-écriture (<code>rw</code>), mais aucun programme ne peut être exécuté depuis ce dossier (<code>noexec</code>). Sans <code>grep</code>, la liste est longue (système, <code>/proc</code>, <code>/sys</code>…).
+        <span class="note">Conseil : <code>docker inspect -f '{{json .HostConfig.Tmpfs}}' mon-service</code> affiche uniquement ce champ, sans avoir à parcourir tout le JSON. Pour limiter la mémoire utilisée, précise une taille : <code>--tmpfs /app/logs:size=64m</code>.</span>
+      </div>
     </div>
 
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Astuce : inspecter le contenu d'un volume</h3>
@@ -641,9 +770,120 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
-        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span> <span class="flag">-it</span> <span class="flag">-v</span> <span class="value">app-data:/data</span> <span class="value">alpine</span> <span class="value">sh</span></code>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span> <span class="flag">-it</span> <span class="flag">-v</span> <span class="value">my-app-volume:/data</span> <span class="value">alpine</span> <span class="value">sh</span></code>
       </div>
       <div class="desc"><code>--rm</code> supprime ce conteneur temporaire à la sortie, <code>-it</code> ouvre un shell interactif, et <code>alpine</code> est une image minimale pratique pour ce genre d'exploration ponctuelle. Une fois dedans, <code>ls /data</code> montre le contenu du volume.</div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Réseaux</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Le réseau d'un conteneur dépend de son <strong>driver</strong> réseau, choisi avec <code>--network</code> au lancement (ou <code>-d</code> à la création d'un réseau). Docker en propose cinq principaux, selon que les conteneurs tournent sur une seule machine ou plusieurs, et selon le niveau d'isolation voulu.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">ls</span></code>
+      </div>
+      <div class="desc">Liste les réseaux existants. Par défaut, Docker en crée trois : <code>bridge</code>, <code>host</code> et <code>none</code>.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Bridge</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Sur le réseau bridge par défaut : <strong>chaque conteneur reçoit une adresse IP privée</strong> ; les conteneurs peuvent se parler entre eux, mais <strong>uniquement par adresse IP</strong> (pas par nom) ; et pour être joignable depuis l'extérieur du réseau bridge (l'hôte, une autre application), un conteneur doit <strong>publier un port</strong> avec <code>-p</code>.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">bridge</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Réseau <strong>par défaut</strong> : plusieurs conteneurs tournent sur la même machine, dans un réseau privé isolé de l'hôte. Pour y accéder depuis l'hôte, on publie des ports avec <code>-p</code>. Sans <code>--network</code>, c'est ce driver qui est utilisé.
+        <span class="note">Conseil : sur un réseau bridge créé soi-même (<code>docker network create &lt;réseau&gt;</code>), les conteneurs se joignent par leur nom (DNS intégré), ce qui n'est pas le cas sur le bridge par défaut.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="value">produits</span> <span class="flag">-p</span> <span class="value">8081:8080</span> <span class="value">produits:1.0</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="value">commandes</span> <span class="flag">-p</span> <span class="value">8082:8080</span> <span class="value">commandes:1.0</span></code>
+      </div>
+      <div class="desc">Exemple : deux applications sur le même hôte, toutes deux sur le réseau bridge par défaut. Chacune écoute sur le port <strong>8080 dans son conteneur</strong>, mais elles sont publiées sur des ports hôte différents (<code>8081</code> et <code>8082</code>), car deux conteneurs ne peuvent pas publier le même port hôte.<br>• Entre conteneurs : <code>commandes</code> appelle <code>produits</code> via son IP privée et le <strong>port conteneur</strong>, ex. <code>http://&lt;IP_produits&gt;:8080/products</code>.<br>• Depuis l'extérieur : une autre application passe par l'hôte et le <strong>port publié</strong>, ex. <code>http://&lt;hôte&gt;:8082</code> pour <code>commandes</code>.<br>• Plusieurs instances d'une même image peuvent tourner côte à côte : chacune a sa propre IP et son propre port hôte.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">inspect</span> <span class="flag">-f</span> <span class="value">'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Affiche l'adresse IP privée d'un conteneur sur son réseau (ex. <code>172.17.0.2</code>), celle à utiliser pour l'appeler depuis un autre conteneur du bridge par défaut.
+        <span class="note">Conseil : cette IP peut changer à chaque redémarrage du conteneur. Pour des appels stables entre conteneurs, préfère un réseau bridge personnalisé où l'on appelle les conteneurs par leur nom.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-mysql</span> <span class="flag">-e</span> <span class="value">MYSQL_DATABASE=ma_base</span> <span class="flag">-e</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span> <span class="flag">-e</span> <span class="value">MYSQL_USER=app_user</span> <span class="flag">-e</span> <span class="value">MYSQL_PASSWORD=app_password</span> <span class="value">mysql/mysql-server:latest</span></code>
+      </div>
+      <div class="desc">Exemple : une base MySQL sur le <strong>bridge par défaut</strong> (aucun <code>--network</code>). Au démarrage, elle crée la base <code>ma_base</code> et l'utilisateur <code>app_user</code>. Sans <code>-p</code>, le port MySQL (<code>3306</code>) n'est pas accessible depuis l'hôte : seuls les autres conteneurs du bridge peuvent la joindre, via son IP privée, ex. <code>jdbc:mysql://&lt;IP_mon-mysql&gt;:3306/ma_base</code>. Sans <code>-d</code>, le conteneur reste attaché au terminal et affiche ses logs.
+        <span class="note">Conseil : <code>mysql/mysql-server</code> est l'image publiée par Oracle, qui n'est plus maintenue ; pour un nouveau projet, préfère l'image officielle <code>mysql</code> (mêmes variables d'environnement).</span>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Host</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Réservé aux <strong>conteneurs Linux</strong>. Le conteneur utilise directement le réseau de la machine hôte : il n'a ni réseau séparé ni adresse IP propre (il utilise celle de l'hôte), et il n'y a <strong>pas besoin de publier de port</strong> : un port ouvert par l'application est directement un port de l'hôte.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">host</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Le conteneur partage directement le réseau de la machine hôte : pas d'IP propre, ses ports sont ceux de l'hôte, donc <code>-p</code> est inutile. Voir aussi l'exemple MySQL dans « Options avancées de run ».</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="value">produits</span> <span class="flag">--network</span> <span class="value">host</span> <span class="value">produits:1.0</span>                         <span class="pipe"># 8080</span><br><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-d</span> <span class="flag">--name</span> <span class="value">commandes</span> <span class="flag">--network</span> <span class="value">host</span> <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="value">commandes:1.0</span> <span class="pipe"># 8081</span></code>
+      </div>
+      <div class="desc">Exemple : deux applications en réseau host, sans aucun <code>-p</code>. Comme elles partagent les ports de l'hôte, elles doivent écouter sur des <strong>ports différents</strong> (ici <code>8081</code> via <code>server.port</code> pour l'application Spring Boot).<br>
+• Depuis une autre application sur l'hôte : <code>http://localhost:8080/products</code> et <code>http://localhost:8081/orders</code>.<br>
+• Depuis une autre machine : <code>http://&lt;hôte&gt;:8081</code>, directement sur le port de l'application.
+        <span class="note">Conseil : en mode host, <code>-p</code> est ignoré, et si deux conteneurs (ou un conteneur et un programme de l'hôte) veulent le même port, le second ne pourra pas démarrer son serveur. Avec Docker Desktop (Windows, macOS), ce mode ne se comporte pas comme sous Linux ; les versions récentes le proposent en option à activer dans les paramètres.</span>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">None</h3>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">none</span> <span class="value">&lt;image&gt;</span></code>
+      </div>
+      <div class="desc">Aucun réseau : le conteneur n'a que l'interface locale (<code>localhost</code>) et ne peut joindre ni l'hôte, ni Internet, ni d'autres conteneurs. Utile pour un traitement isolé qui n'a besoin d'aucun accès réseau.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Overlay</h3>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">create</span> <span class="flag">-d</span> <span class="value">overlay</span> <span class="value">&lt;réseau&gt;</span></code>
+      </div>
+      <div class="desc">Relie des conteneurs qui tournent sur <strong>des machines différentes</strong>, comme s'ils étaient sur le même réseau.
+        <span class="note">Conseil : ce driver s'utilise avec Docker Swarm ; il faut d'abord initialiser le cluster avec <code>docker swarm init</code>.</span>
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Macvlan</h3>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">create</span> <span class="flag">-d</span> <span class="value">macvlan</span> <span class="flag">--subnet</span> <span class="value">&lt;sous-réseau&gt;</span> <span class="flag">--gateway</span> <span class="value">&lt;passerelle&gt;</span> <span class="flag">-o</span> <span class="value">parent=&lt;interface&gt;</span> <span class="value">&lt;réseau&gt;</span></code>
+      </div>
+      <div class="desc">Le conteneur reçoit sa propre adresse MAC et sa propre IP : il apparaît comme <strong>une machine distincte</strong> sur le réseau physique. Utile pour des applications qui doivent être jointes directement sur le réseau local.
+        <span class="note">Conseil : fonctionne sur un hôte Linux. Par défaut, l'hôte lui-même ne peut pas joindre ses conteneurs macvlan.</span>
+      </div>
     </div>
   </section>
 
