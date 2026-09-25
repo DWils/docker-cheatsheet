@@ -2,7 +2,7 @@
 
 Page HTML autonome (police, CSS et script inclus) récapitulant les commandes Docker essentielles :
 conteneurs, images, options de `docker run`, build, filtrage, logs, `exec`, `inspect`, et les volumes
-(nommés, anonymes, bind mounts, tmpfs), puis les réseaux (bridge, host, none, overlay, macvlan).
+(nommés, anonymes, bind mounts, tmpfs), puis les réseaux (bridge, host, none, overlay, macvlan) et Docker Compose.
 
 ## Utilisation
 

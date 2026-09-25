@@ -374,7 +374,9 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">-e</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span> <span class="flag">-e</span> <span class="value">MYSQL_DATABASE=my_database</span> <span class="flag">-e</span> <span class="value">MYSQL_USER=app_user</span> <span class="flag">-e</span> <span class="value">MYSQL_PASSWORD=app_password</span> <span class="flag">--network</span> <span class="value">host</span> <span class="value">mysql:latest</span></code>
       </div>
-      <div class="desc">Exemple : lance MySQL avec ses identifiants et sa base initiale, en réseau hôte.</div>
+      <div class="desc">Exemple : lance MySQL avec ses identifiants et sa base initiale, en réseau hôte. MySQL écoute alors directement sur le port <code>3306</code> de la machine : une application qui tourne sur l'hôte (ou un autre conteneur en mode host) s'y connecte avec <code>jdbc:mysql://localhost:3306/my_database</code>, sans <code>-p</code>.
+        <span class="note">Conseil : si un MySQL tourne déjà sur l'hôte, le port 3306 est occupé et le serveur du conteneur ne pourra pas démarrer. Voir la section Réseaux › Host pour les autres points à connaître sur ce mode.</span>
+      </div>
     </div>
 
     <div class="card">
@@ -472,9 +474,81 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">tag</span> <span class="value">&lt;image_source&gt;</span> <span class="value">&lt;nom&gt;:&lt;tag&gt;</span></code>
+      </div>
+      <div class="desc">Donne un <strong>nouveau nom</strong> (et un tag) à une image existante, désignée par son ID ou son nom actuel. Aucune copie n'est faite : les deux noms pointent vers la même image, avec le même <code>IMAGE ID</code> dans <code>docker images</code>. Format complet du nom : <code>[registre/][compte/]nom:tag</code>.
+        <span class="note">Conseil : c'est l'étape obligatoire avant de publier une image sur Docker Hub, qui attend un nom de la forme <code>&lt;compte&gt;/&lt;nom&gt;:&lt;tag&gt;</code>. Sans <code>:tag</code>, Docker utilise <code>latest</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">tag</span> <span class="value">2f7e1deacee7</span> <span class="value">mon-compte/mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : l'image d'ID <code>2f7e1deacee7</code> (repérée avec <code>docker images</code>) reçoit le nom <code>mon-compte/mon-service:2.0.1</code>, prêt à être envoyé sur le compte Docker Hub <code>mon-compte</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">login</span> <span class="flag">--username</span><span class="value">=&lt;compte&gt;</span></code>
+      </div>
+      <div class="desc">Se connecte à Docker Hub (ou à un autre registre, en ajoutant son adresse à la fin). Le mot de passe est demandé ensuite, sans s'afficher à la saisie ; <code>Login Succeeded</code> confirme la connexion. Nécessaire avant un <code>docker push</code>, ou un <code>docker pull</code> depuis un dépôt privé.
+        <span class="note">Conseil : le message <code>WARNING! Your password will be stored unencrypted in …/.docker/config.json</code> signifie que les identifiants sont enregistrés en clair sur la machine. Configure un <em>credential helper</em> pour les chiffrer, préfère un <strong>jeton d'accès</strong> Docker Hub à ton mot de passe (surtout sur un serveur partagé), et pense à <code>docker logout</code> quand tu as fini.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">login</span> <span class="flag">--username</span><span class="value">=mon-compte</span></code>
+      </div>
+      <div class="desc">Exemple : connexion au compte Docker Hub <code>mon-compte</code>, par exemple sur un serveur distant (une instance cloud) avant d'y récupérer ou d'y publier des images.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">push</span> <span class="value">&lt;compte&gt;/&lt;nom&gt;:&lt;tag&gt;</span></code>
+      </div>
+      <div class="desc">Envoie (publie) une image locale vers un registre, Docker Hub par défaut. Le nom doit commencer par ton compte Docker Hub : c'est pour ça qu'on passe d'abord par <code>docker tag</code>. Seules les couches absentes du registre sont envoyées.
+        <span class="note">Conseil : connecte-toi d'abord avec <code>docker login</code>. Un message <code>denied: requested access to the resource is denied</code> signifie en général que tu n'es pas connecté, ou que le préfixe du nom ne correspond pas à ton compte. Sur Docker Hub, le dépôt est créé automatiquement au premier push.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">push</span> <span class="value">mon-compte/mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : publie l'image taguée juste au-dessus sur le compte <code>mon-compte</code>. Elle pourra ensuite être récupérée sur n'importe quelle machine avec <code>docker pull mon-compte/mon-service:2.0.1</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">pull</span> <span class="value">mon-compte/mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : récupère l'image publiée, depuis n'importe quelle machine. Pour une image publique, aucune connexion n'est nécessaire ; pour un dépôt privé, il faut d'abord <code>docker login</code>. Cela boucle le cycle <code>tag</code> → <code>push</code> → <code>pull</code>. Si l'image est déjà présente en local avec les mêmes couches, Docker l'indique (<code>Image is up to date</code>) sans rien retélécharger.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="flag">-p</span> <span class="value">8082:8082</span> <span class="flag">-d</span> <span class="value">mon-compte/mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : sur un serveur distant (ex. une instance cloud), lance l'application directement depuis l'image publiée sur Docker Hub. Si l'image n'est pas encore en local, <code>docker run</code> la télécharge d'abord automatiquement. Avec <code>-d</code>, Docker affiche seulement l'ID complet du conteneur créé (64 caractères) et rend la main.
+        <span class="note">Conseil : sur un serveur cloud, ouvre aussi le port <code>8082</code> dans le pare-feu (ex. groupe de sécurité) pour accéder à l'application via <code>http://&lt;IP_publique&gt;:8082</code>.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">image</span> <span class="sub">prune</span> <span class="flag">-a</span></code>
       </div>
-      <div class="desc">Supprime toutes les images <strong>non utilisées par un conteneur</strong> en une seule fois.
+      <div class="desc">Supprime toutes les images <strong>non utilisées par un conteneur</strong> en une seule fois, après confirmation (<code>[y/N]</code>). <code>-a</code> et <code>--all</code> sont équivalents. Dans le résultat, <code>untagged</code> indique un nom d'image retiré (ex. <code>mysql:9</code>) et <code>deleted: sha256:…</code> une couche effectivement effacée ; <code>Total reclaimed space</code> donne l'espace libéré. Lancée juste après <code>docker container prune</code>, plus aucun conteneur ne référence les images : elles partent donc toutes, et seront retéléchargées ou reconstruites au prochain <code>run</code>.
         <span class="note">Précision : sans <code>-a</code>, seules les images « dangling » (sans tag) sont supprimées. Avec <code>-a</code>, toute image non référencée par un conteneur part aussi — ce n'est pas littéralement « toutes les images » du système.</span>
       </div>
     </div>
@@ -513,6 +587,33 @@
         <code><span class="pipe">... -q |</span> <span class="sub">xargs</span> <span class="docker">docker</span> <span class="sub">rm</span></code>
       </div>
       <div class="desc">Ajouté à la suite d'un filtrage : supprime en une fois tous les conteneurs correspondants (<code>-q</code> ne renvoie que les IDs, <code>xargs</code> les passe un à un à <code>docker rm</code>).</div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">stop</span> <span class="pipe">$(</span><span class="docker">docker</span> <span class="sub">ps</span> <span class="flag">-q</span><span class="pipe">)</span></code>
+      </div>
+      <div class="desc">Arrête <strong>tous les conteneurs en cours d'exécution</strong> d'un coup. <code>docker ps -q</code> renvoie uniquement les IDs des conteneurs actifs, et <code>$(…)</code> les passe en arguments à <code>docker stop</code>, qui affiche l'ID de chaque conteneur arrêté.
+        <span class="note">Conseil : si aucun conteneur ne tourne, la liste est vide et <code>docker stop</code> affiche une erreur (il attend au moins un argument) : c'est sans conséquence.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">container</span> <span class="sub">prune</span></code>
+      </div>
+      <div class="desc">Supprime <strong>tous les conteneurs arrêtés</strong> en une seule commande, après confirmation (<code>[y/N]</code>). Affiche la liste des conteneurs supprimés et l'espace disque libéré (<code>Total reclaimed space</code>). Enchaînée après la commande précédente, elle fait table rase des conteneurs.
+        <span class="note">Conseil : <code>-f</code> supprime sans demander de confirmation. Les volumes des conteneurs supprimés sont conservés.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">system</span> <span class="sub">prune</span> <span class="flag">--all</span></code>
+      </div>
+      <div class="desc">Grand nettoyage en une seule commande, après confirmation : supprime les <strong>conteneurs arrêtés</strong>, les <strong>réseaux inutilisés</strong> (sauf <code>bridge</code>, <code>host</code> et <code>none</code>), <strong>toutes les images</strong> non utilisées par un conteneur (grâce à <code>--all</code> ; sans lui, seulement les images sans tag) et le <strong>cache de build</strong>. Équivaut à enchaîner <code>container prune</code>, <code>network prune</code>, <code>image prune -a</code> et le nettoyage du cache.
+        <span class="note">Conseil : les volumes ne sont pas touchés ; ajoute <code>--volumes</code> pour supprimer aussi les volumes inutilisés (et donc leurs données). <code>docker system df</code> montre avant coup l'espace occupé par les images, conteneurs, volumes et le cache.</span>
+      </div>
     </div>
   </section>
 
@@ -785,7 +886,7 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">ls</span></code>
       </div>
-      <div class="desc">Liste les réseaux existants. Par défaut, Docker en crée trois : <code>bridge</code>, <code>host</code> et <code>none</code>.</div>
+      <div class="desc">Liste les réseaux existants, avec leur ID, leur nom (NAME), leur driver (DRIVER) et leur portée (SCOPE). Par défaut, Docker en crée trois : <code>bridge</code>, <code>host</code> et <code>none</code> (driver <code>null</code>, puisqu'il n'y a pas de réseau). Un réseau créé avec <code>docker network create</code> apparaît à côté, ex. <code>my-net</code> avec le driver <code>bridge</code>. La portée <code>local</code> signifie que le réseau n'existe que sur cette machine (un réseau overlay aurait la portée <code>swarm</code>).</div>
     </div>
 
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Bridge</h3>
@@ -824,9 +925,101 @@
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-mysql</span> <span class="flag">-e</span> <span class="value">MYSQL_DATABASE=ma_base</span> <span class="flag">-e</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span> <span class="flag">-e</span> <span class="value">MYSQL_USER=app_user</span> <span class="flag">-e</span> <span class="value">MYSQL_PASSWORD=app_password</span> <span class="value">mysql/mysql-server:latest</span></code>
       </div>
-      <div class="desc">Exemple : une base MySQL sur le <strong>bridge par défaut</strong> (aucun <code>--network</code>). Au démarrage, elle crée la base <code>ma_base</code> et l'utilisateur <code>app_user</code>. Sans <code>-p</code>, le port MySQL (<code>3306</code>) n'est pas accessible depuis l'hôte : seuls les autres conteneurs du bridge peuvent la joindre, via son IP privée, ex. <code>jdbc:mysql://&lt;IP_mon-mysql&gt;:3306/ma_base</code>. Sans <code>-d</code>, le conteneur reste attaché au terminal et affiche ses logs.
+      <div class="desc">Exemple : une base MySQL sur le <strong>bridge par défaut</strong> (aucun <code>--network</code>). Au démarrage, elle crée la base <code>ma_base</code> et l'utilisateur <code>app_user</code>. Sans <code>-p</code>, le port MySQL (<code>3306</code>) n'est pas accessible depuis l'hôte : seuls les autres conteneurs du bridge peuvent la joindre, via son IP privée, ex. <code>jdbc:mysql://&lt;IP_mon-mysql&gt;:3306/ma_base</code>. Dans <code>docker ps</code>, la colonne PORTS affiche <code>3306/tcp, 33060-33061/tcp</code> sans <code>0.0.0.0:…-&gt;</code> : ces ports sont exposés par l'image mais <strong>non publiés</strong> sur l'hôte. Pour trouver l'IP, <code>docker inspect mon-mysql</code> : champ <code>IPAddress</code> dans <code>NetworkSettings.Networks.bridge</code> (ou la commande <code>inspect -f</code> ci-dessus). Sans <code>-d</code>, le conteneur reste attaché au terminal et affiche ses logs.
         <span class="note">Conseil : <code>mysql/mysql-server</code> est l'image publiée par Oracle, qui n'est plus maintenue ; pour un nouveau projet, préfère l'image officielle <code>mysql</code> (mêmes variables d'environnement).</span>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="flag">-p</span> <span class="value">8081:8081</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.username=app_user</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.password=app_password</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.url=jdbc:mysql://172.17.0.2:3306/ma_base</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=prod</span> <span class="pipe">\</span><br>  <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : <strong>démarrer une application Spring Boot</strong> sur le bridge par défaut, connectée à la base MySQL ci-dessus. Les variables <code>spring.datasource.*</code> remplacent la configuration de <code>application.properties</code> : identifiants (<code>app_user</code> / <code>app_password</code>, ceux créés par <code>MYSQL_USER</code> / <code>MYSQL_PASSWORD</code>) et URL JDBC pointant sur l'<strong>IP privée</strong> du conteneur MySQL (<code>172.17.0.2</code>, obtenue avec <code>docker inspect</code>) et son port conteneur <code>3306</code>. L'application, elle, est publiée sur l'hôte via <code>-p 8081:8081</code>, en cohérence avec <code>server.port</code>.
+        <span class="note">Conseil : si le conteneur MySQL redémarre, son IP peut changer et l'URL ne fonctionnera plus. Sur un réseau bridge personnalisé, on écrirait simplement <code>jdbc:mysql://mon-mysql:3306/ma_base</code>.</span>
+      </div>
+    </div>
+
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Bridge personnalisé</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Plutôt que le bridge par défaut, on peut créer son propre réseau bridge. Les conteneurs qui y sont rattachés sont isolés des autres réseaux et, surtout, <strong>se joignent par leur nom de conteneur</strong> grâce au DNS intégré de Docker : plus besoin de chercher leur IP.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">create</span> <span class="value">&lt;réseau&gt;</span></code>
+      </div>
+      <div class="desc">Crée un réseau. Sans <code>-d</code>, le driver utilisé est <code>bridge</code>. Docker affiche en retour l'identifiant (64 caractères) du réseau créé.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">create</span> <span class="value">my-net</span></code>
+      </div>
+      <div class="desc">Exemple : crée le réseau bridge <code>my-net</code>. Il apparaît ensuite dans <code>docker network ls</code> à côté de <code>bridge</code>, <code>host</code> et <code>none</code>. Les conteneurs lancés avec <code>--network my-net</code> pourront s'appeler par leur nom (ex. <code>jdbc:mysql://mon-mysql:3306/ma_base</code>).</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">inspect</span> <span class="value">&lt;réseau&gt;</span></code>
+      </div>
+      <div class="desc">Affiche le détail d'un réseau au format JSON : <code>Driver</code>, <code>Scope</code>, plage d'adresses attribuée (<code>IPAM.Config</code> : <code>Subnet</code> et <code>Gateway</code>), et <code>Containers</code> : la liste des conteneurs connectés avec leur adresse IP sur ce réseau.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">inspect</span> <span class="value">my-net</span></code>
+      </div>
+      <div class="desc">Exemple : inspecte le réseau <code>my-net</code>. Juste après sa création, <code>Containers</code> est vide ; le <code>Subnet</code> montre la plage d'IP propre à ce réseau (ex. <code>172.18.0.0/16</code>), distincte de celle du bridge par défaut (<code>172.17.0.0/16</code>).
+        <span class="note">Conseil : <code>docker network inspect -f '{{json .Containers}}' my-net</code> n'affiche que les conteneurs connectés.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">connect</span> <span class="value">&lt;réseau&gt;</span> <span class="value">&lt;container&gt;</span></code>
+      </div>
+      <div class="desc">Connecte un conteneur <strong>déjà existant</strong> (même en cours d'exécution, sans le redémarrer) à un réseau supplémentaire. Le conteneur reste aussi sur ses réseaux actuels : il a alors une IP sur chacun.
+        <span class="note">Conseil : <code>docker network disconnect &lt;réseau&gt; &lt;container&gt;</code> fait l'inverse et retire le conteneur d'un réseau.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">network</span> <span class="sub">connect</span> <span class="value">my-net</span> <span class="value">mon-mysql</span></code>
+      </div>
+      <div class="desc">Exemple : rattache le conteneur MySQL (lancé plus haut sur le bridge par défaut) au réseau <code>my-net</code>. Les conteneurs de <code>my-net</code> peuvent désormais le joindre par son nom : <code>jdbc:mysql://mon-mysql:3306/ma_base</code>. <code>docker network inspect my-net</code> le montre dans <code>Containers</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">my-net</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="flag">-p</span> <span class="value">8081:8081</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.username=app_user</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.password=app_password</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.url=jdbc:mysql://mon-mysql:3306/ma_base</span> <span class="pipe">\</span><br>  <span class="value">mon-service:2.0.1</span> <span class="flag">--spring.profiles.active=prod</span></code>
+      </div>
+      <div class="desc">Exemple : l'application Spring Boot lancée directement sur <code>my-net</code> (<code>--network my-net</code>), où se trouve aussi <code>mon-mysql</code>. L'URL JDBC utilise le <strong>nom du conteneur</strong> MySQL au lieu de son IP : <code>jdbc:mysql://mon-mysql:3306/ma_base</code>, résolu par le DNS de Docker. Elle continue donc de fonctionner même si l'IP de MySQL change. Le profil est ici passé en argument après l'image (<code>--spring.profiles.active=prod</code>), équivalent de <code>-e SPRING_PROFILES_ACTIVE=prod</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">exec</span> <span class="value">mon-service</span> <span class="value">ping</span> <span class="flag">-c</span> <span class="value">4</span> <span class="value">mon-mysql</span></code>
+      </div>
+      <div class="desc">Vérification : depuis le conteneur de l'application, envoie 4 pings (<code>-c 4</code>) au conteneur MySQL <strong>par son nom</strong>. La première ligne de réponse, ex. <code>PING mon-mysql (172.18.0.2)</code>, montre que le DNS de Docker a résolu le nom en une IP du réseau <code>my-net</code> (plage <code>172.18.x.x</code>) ; <code>0% packet loss</code> confirme que les deux conteneurs communiquent. Sans <code>-it</code>, <code>docker exec</code> lance une commande ponctuelle et affiche simplement son résultat.
+        <span class="note">Conseil : <code>ping</code> n'est pas installé dans toutes les images (surtout les images minimales) ; si la commande est introuvable, utilise un conteneur jetable <code>busybox</code> sur le même réseau (voir ci-dessous).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--rm</span> <span class="flag">--network</span> <span class="value">my-net</span> <span class="value">busybox</span> <span class="value">ping</span> <span class="flag">-c</span> <span class="value">4</span> <span class="value">mon-mysql</span></code>
+      </div>
+      <div class="desc">Vérification avec un <strong>conteneur jetable</strong> : lance un conteneur <code>busybox</code> (image minuscule qui contient <code>ping</code>, <code>nslookup</code>, <code>wget</code>…) sur <code>my-net</code>, qui ping <code>mon-mysql</code> par son nom, puis est supprimé automatiquement (<code>--rm</code>). Pratique quand l'image de l'application n'a pas d'outils réseau. Au premier lancement, le message <code>Unable to find image 'busybox:latest' locally</code> est normal : Docker télécharge l'image puis exécute la commande.</div>
     </div>
 
     <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Host</h3>
@@ -849,6 +1042,27 @@
 • Depuis une autre application sur l'hôte : <code>http://localhost:8080/products</code> et <code>http://localhost:8081/orders</code>.<br>
 • Depuis une autre machine : <code>http://&lt;hôte&gt;:8081</code>, directement sur le port de l'application.
         <span class="note">Conseil : en mode host, <code>-p</code> est ignoré, et si deux conteneurs (ou un conteneur et un programme de l'hôte) veulent le même port, le second ne pourra pas démarrer son serveur. Avec Docker Desktop (Windows, macOS), ce mode ne se comporte pas comme sous Linux ; les versions récentes le proposent en option à activer dans les paramètres.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--network</span> <span class="value">host</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.username=app_user</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.password=app_password</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.url=jdbc:mysql://localhost:3306/my_database</span> <span class="pipe">\</span><br>  <span class="value">mon-service:2.0.1</span> <span class="flag">--spring.profiles.active=prod</span></code>
+      </div>
+      <div class="desc">Exemple : application Spring Boot et MySQL (lancé en mode host, voir « Options avancées de run ») <strong>tous deux en réseau host</strong>. Comme ils partagent le réseau de la machine, l'application joint la base via <code>localhost:3306</code> : pas d'IP à chercher, pas de nom de conteneur, pas de <code>-p</code>. L'application est directement accessible sur <code>http://localhost:8081</code>.</div>
+    </div>
+
+    <h3 style="font-size: 0.95rem; color: var(--text); margin: 26px 0 10px; font-weight: 600;">Joindre l'hôte depuis un conteneur : host.docker.internal</h3>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Depuis un conteneur, <code>localhost</code> désigne le conteneur lui-même, pas la machine hôte. Pour joindre un service qui écoute sur l'hôte (une base installée localement, ou un conteneur lancé en mode host), on utilise le nom spécial <code>host.docker.internal</code>, qui pointe vers l'hôte.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">run</span> <span class="flag">--name</span> <span class="value">mon-service</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">server.port=8081</span> <span class="flag">-p</span> <span class="value">8081:8081</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.username=app_user</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.password=app_password</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">spring.datasource.url=jdbc:mysql://host.docker.internal:3306/my_database</span> <span class="pipe">\</span><br>  <span class="flag">-e</span> <span class="value">SPRING_PROFILES_ACTIVE=prod</span> <span class="pipe">\</span><br>  <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : l'application tourne sur le <strong>bridge par défaut</strong> (publiée avec <code>-p 8081:8081</code>), tandis que MySQL écoute sur le port <code>3306</code> de l'hôte (MySQL en mode host, ou installé directement sur la machine). L'URL JDBC <code>jdbc:mysql://host.docker.internal:3306/my_database</code> sort du conteneur pour atteindre l'hôte.
+        <span class="note">Conseil : <code>host.docker.internal</code> est disponible automatiquement avec Docker Desktop (Windows, macOS). Sous Linux, ajoute <code>--add-host=host.docker.internal:host-gateway</code> au <code>docker run</code> pour le définir.</span>
       </div>
     </div>
 
@@ -883,6 +1097,97 @@
       </div>
       <div class="desc">Le conteneur reçoit sa propre adresse MAC et sa propre IP : il apparaît comme <strong>une machine distincte</strong> sur le réseau physique. Utile pour des applications qui doivent être jointes directement sur le réseau local.
         <span class="note">Conseil : fonctionne sur un hôte Linux. Par défaut, l'hôte lui-même ne peut pas joindre ses conteneurs macvlan.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="group">
+    <h2>Docker Compose</h2>
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0 0 14px;">Docker Compose décrit <strong>toute une application multi-conteneurs dans un seul fichier YAML</strong> (<code>docker-compose.yaml</code>) : base de données, serveur de configuration, discovery, gateway, microservices… Pour chaque service, on y déclare ce qu'on passerait sinon à <code>docker run</code> : nom, ports, variables d'environnement, volumes, réseau. Compose peut ensuite construire les images (build), lancer l'ensemble (run) et publier les images (publish) en une commande.</p>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span>           <span class="pipe"># base de données</span><br>  <span class="value">config-server:</span>   <span class="pipe"># serveur de configuration</span><br>  <span class="value">eureka:</span>          <span class="pipe"># annuaire de services (discovery)</span><br>  <span class="value">gateway:</span>         <span class="pipe"># API Gateway</span><br>  <span class="value">users:</span>           <span class="pipe"># microservice Users</span><br>  <span class="value">products:</span>        <span class="pipe"># microservice Products</span></code>
+      </div>
+      <div class="desc">Structure d'un fichier <code>docker-compose.yaml</code> : sous <code>services:</code>, une entrée par conteneur. Chaque service reçoit ensuite sa configuration (<code>image</code> ou <code>build</code>, <code>ports</code>, <code>environment</code>, <code>volumes</code>, <code>networks</code>…). Le fichier se crée à la racine du projet ; Compose reconnaît automatiquement les noms <code>compose.yaml</code> (nom recommandé aujourd'hui), <code>compose.yml</code>, <code>docker-compose.yaml</code> et <code>docker-compose.yml</code>. Pour un autre nom, voir l'option <code>-f</code> ci-dessous.
+        <span class="note">Conseil : Compose crée automatiquement un réseau bridge pour le projet ; les services s'y joignent <strong>par leur nom de service</strong> (ex. <code>jdbc:mysql://mysql:3306/…</code>), comme sur un bridge personnalisé.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span><br>    <span class="flag">container_name:</span> <span class="value">mysql-server</span><br>  <span class="pipe">#mon-service:</span></code>
+      </div>
+      <div class="desc"><code>container_name</code> fixe le <strong>nom du conteneur</strong>, comme <code>--name</code> avec <code>docker run</code>. Sans lui, Compose génère un nom de la forme <code>&lt;projet&gt;-&lt;service&gt;-&lt;numéro&gt;</code>, où le projet est par défaut le nom du dossier qui contient le fichier : ex. <code>users-mysql-1</code>. Ici, le conteneur s'appellera <code>mysql-server</code>. Une ligne commençant par <code>#</code> est un commentaire YAML (service désactivé).
+        <span class="note">Conseil : le nom du service (<code>mysql</code>) reste celui à utiliser pour joindre le conteneur depuis les autres services. Et avec un <code>container_name</code> fixe, on ne peut pas lancer plusieurs instances du service (<code>--scale</code>), car deux conteneurs ne peuvent pas porter le même nom. Attention aussi à l'indentation : YAML n'accepte que des espaces, pas de tabulations.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span><br>    <span class="flag">container_name:</span> <span class="value">mysql-server</span><br>    <span class="flag">image:</span> <span class="value">mysql:latest</span><br>    <span class="flag">environment:</span><br>      <span class="flag">MYSQL_ROOT_PASSWORD:</span> <span class="value">${MYSQL_ROOT_PASSWORD}</span><br>      <span class="flag">MYSQL_DATABASE:</span> <span class="value">ma_base</span><br>      <span class="flag">MYSQL_USER:</span> <span class="value">${MYSQL_USER}</span><br>      <span class="flag">MYSQL_PASSWORD:</span> <span class="value">${MYSQL_PASSWORD}</span><br>  <span class="pipe">#mon-service:</span></code>
+      </div>
+      <div class="desc"><code>image</code> indique l'image à utiliser (équivalent du dernier argument de <code>docker run</code>), et <code>environment</code> liste les variables d'environnement du conteneur (équivalent des <code>-e</code>), une par ligne au format <code>CLÉ: valeur</code>. La syntaxe <code>${MYSQL_PASSWORD}</code> est <strong>remplacée par Compose</strong> au lancement, avec la valeur de la variable du même nom prise dans le terminal ou dans un fichier <code>.env</code> placé à côté du <code>docker-compose.yaml</code> (ex. une ligne <code>MYSQL_PASSWORD=app_password</code>). Les valeurs fixes, comme <code>ma_base</code>, s'écrivent directement.
+        <span class="note">Conseil : ce mécanisme évite d'écrire les mots de passe en clair dans le fichier Compose ; ajoute <code>.env</code> au <code>.gitignore</code> pour ne pas le committer. <code>docker compose config</code> affiche le fichier final, variables remplacées, pour vérifier. Une variable absente est remplacée par une chaîne vide (avec un avertissement) ; <code>${VAR:-défaut}</code> fournit une valeur par défaut.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="plain">export</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span>          <span class="pipe"># Linux, macOS, Git Bash</span><br><span class="plain">export</span> <span class="value">MYSQL_USER=app_user</span><br><span class="plain">export</span> <span class="value">MYSQL_PASSWORD=app_password</span><br><span class="plain">$env:</span><span class="value">MYSQL_ROOT_PASSWORD="root_password"</span>        <span class="pipe"># PowerShell (idem pour les autres)</span><br><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span>                              <span class="pipe"># lance les services avec ces valeurs</span></code>
+      </div>
+      <div class="desc">Définit dans le terminal une variable que Compose utilisera pour remplacer <code>${MYSQL_ROOT_PASSWORD}</code>. La syntaxe dépend du shell : <code>export</code> sous Linux, macOS et Git Bash ; <code>$env:</code> en PowerShell (valeur entre guillemets). Ici, les trois variables référencées dans le fichier Compose ci-dessus sont définies une par une, puis on lance <code>docker compose up</code> <strong>depuis ce même terminal</strong>.
+        <span class="note">Conseil : ces variables ne vivent que le temps de la session du terminal ; en fermant la fenêtre, il faut les redéfinir. Pour ne pas les retaper à chaque fois, utilise plutôt un fichier <code>.env</code> (hors Git).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="flag">-f</span> <span class="value">&lt;fichier&gt;</span> <span class="value">&lt;commande&gt;</span></code>
+      </div>
+      <div class="desc">Indique explicitement le fichier Compose à utiliser, quand il ne porte pas un des noms reconnus par défaut ou quand on veut en choisir un parmi plusieurs. L'option se place <strong>avant</strong> la sous-commande (<code>up</code>, <code>down</code>…).
+        <span class="note">Conseil : <code>-f</code> peut être répété pour combiner plusieurs fichiers, le second complétant ou surchargeant le premier (ex. <code>-f compose.yaml -f compose.prod.yaml</code>).</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="flag">-f</span> <span class="value">docker-compose-prod.yaml</span> <span class="sub">up</span> <span class="flag">-d</span></code>
+      </div>
+      <div class="desc">Exemple : lance en arrière-plan les services décrits dans un fichier dédié à la production. Pour les arrêter, il faut repasser le même fichier : <code>docker compose -f docker-compose-prod.yaml down</code>.</div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span></code>
+      </div>
+      <div class="desc">Crée et démarre tous les services décrits dans le fichier (réseau, volumes, conteneurs), en téléchargeant ou construisant les images si nécessaire. À lancer depuis le dossier qui contient <code>docker-compose.yaml</code>.
+        <span class="note">Conseil : ajoute <code>-d</code> pour lancer en arrière-plan, comme avec <code>docker run</code>. L'ancienne syntaxe <code>docker-compose up</code> (avec un tiret) fonctionne encore sur certaines installations.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">down</span></code>
+      </div>
+      <div class="desc">Arrête et <strong>supprime</strong> les conteneurs et le réseau créés par <code>up</code>. Les volumes nommés sont conservés : les données (ex. de MySQL) survivent.
+        <span class="note">Conseil : <code>docker compose down -v</code> supprime aussi les volumes, donc les données.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">down</span> <span class="flag">-v</span> <span class="flag">--rmi</span> <span class="value">all</span></code>
+      </div>
+      <div class="desc">Nettoyage complet d'un projet Compose : supprime les <strong>conteneurs</strong> (ex. <code>mysql-server</code>), le <strong>réseau</strong> créé par Compose (nommé <code>&lt;projet&gt;_default</code>), les <strong>volumes</strong> (<code>-v</code>) et les <strong>images</strong> utilisées par les services (<code>--rmi all</code>, ex. <code>mysql:latest</code>). Chaque élément supprimé s'affiche avec la mention <code>Removed</code>.
+        <span class="note">Conseil : <code>--rmi local</code> ne supprime que les images construites par Compose (sans nom personnalisé) et garde celles téléchargées. Les messages <code>WARN … variable is not set. Defaulting to a blank string</code> apparaissent quand les variables du fichier ne sont pas définies dans ce terminal (ex. un nouvel onglet) : sans conséquence pour un <code>down</code>, mais un <code>up</code> lancé ainsi démarrerait MySQL avec des valeurs vides.</span>
       </div>
     </div>
   </section>
