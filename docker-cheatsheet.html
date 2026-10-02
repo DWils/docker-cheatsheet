@@ -1146,6 +1146,60 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span><br>    <span class="flag">image:</span> <span class="value">mysql:latest</span>     <span class="pipe"># + container_name, environment, ports…</span><br>    <span class="flag">volumes:</span><br>      <span class="pipe">-</span> <span class="value">mysql-data:/var/lib/mysql</span><br>  <span class="pipe">#mon-service:</span><br><br><span class="sub">volumes:</span><br>  <span class="value">mysql-data:</span></code>
+      </div>
+      <div class="desc">Persister les données de MySQL avec un <strong>volume nommé</strong>. Deux niveaux : dans le service, <code>volumes</code> monte le volume <code>mysql-data</code> sur <code>/var/lib/mysql</code> (équivalent de <code>-v mysql-data:/var/lib/mysql</code>) ; en bas du fichier, la section <code>volumes:</code> de premier niveau <strong>déclare</strong> ce volume nommé, que Compose crée au premier <code>up</code>. Comme <code>ports</code>, c'est une liste YAML (un tiret par montage).
+        <span class="note">Conseil : Compose préfixe le nom du volume par celui du projet (ex. <code>&lt;projet&gt;_mysql-data</code> dans <code>docker volume ls</code>). Le volume survit à <code>docker compose down</code>, mais <code>down -v</code> le supprime avec ses données. Pour un bind mount, écris un chemin à la place du nom (ex. <code>./mysql-data:/var/lib/mysql</code>) : aucune déclaration en bas de fichier n'est alors nécessaire.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span>                       <span class="pipe"># …</span><br><br>  <span class="value">mon-service:</span><br>    <span class="flag">container_name:</span> <span class="value">mon-service</span><br>    <span class="flag">build:</span><br>      <span class="flag">context:</span> <span class="value">"./mon-service"</span><br>      <span class="flag">dockerfile:</span> <span class="value">"Dockerfile-multi-stage"</span><br>      <span class="flag">tags:</span><br>        <span class="pipe">-</span> <span class="value">mon-service:latest</span></code>
+      </div>
+      <div class="desc"><code>build</code> remplace <code>image</code> quand l'image doit être <strong>construite à partir d'un Dockerfile</strong> au lieu d'être téléchargée. <code>context</code> est le dossier envoyé au build (chemin relatif au fichier Compose, ici le dossier du microservice) et <code>dockerfile</code> le nom du Dockerfile à utiliser dans ce dossier. C'est l'équivalent de <code>docker build -f Dockerfile-multi-stage ./mon-service</code>. Sans <code>dockerfile</code>, Compose cherche un fichier nommé <code>Dockerfile</code>. <code>tags</code> (une liste YAML) ajoute des noms à l'image construite, ici <code>mon-service:latest</code>, utilisable ensuite avec <code>docker run</code> ou <code>docker push</code>.
+        <span class="note">Conseil : sans <code>image</code>, l'image construite reçoit aussi le nom automatique <code>&lt;projet&gt;-&lt;service&gt;</code>, en plus des noms listés dans <code>tags</code> ; pour choisir le nom principal, ajoute <code>image: mon-service:2.0.1</code> à côté de <code>build</code>. <code>docker compose up</code> réutilise l'image déjà construite : après une modification du code, relance avec <code>docker compose up --build</code> (ou <code>docker compose build</code>) pour la reconstruire.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code>  <span class="value">mon-service:</span><br>    <span class="flag">container_name:</span> <span class="value">mon-service</span><br>    <span class="flag">image:</span> <span class="value">mon-compte/mon-service:2.0.1</span><br>    <span class="flag">build:</span><br>      <span class="flag">context:</span> <span class="value">"./mon-service"</span><br>      <span class="flag">dockerfile:</span> <span class="value">"Dockerfile-multi-stage"</span><br>      <span class="flag">tags:</span><br>        <span class="pipe">-</span> <span class="value">mon-service:latest</span><br>        <span class="pipe">-</span> <span class="value">mon-service:2.0.1</span></code>
+      </div>
+      <div class="desc">Exemple : <code>image</code> et <code>build</code> <strong>ensemble</strong>. Compose construit l'image à partir du Dockerfile et lui donne comme nom principal la valeur de <code>image</code>, ici au format Docker Hub <code>&lt;compte&gt;/&lt;nom&gt;:&lt;tag&gt;</code>, plus les noms locaux listés dans <code>tags</code> (<code>mon-service:latest</code> et <code>mon-service:2.0.1</code>). Tous pointent vers la même image (même <code>IMAGE ID</code>), comme avec <code>docker tag</code>.
+        <span class="note">Conseil : avec un nom au format Docker Hub, <code>docker compose push</code> publie directement l'image du service sur ton compte (après <code>docker login</code>), sans passer par <code>docker tag</code>.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span>                       <span class="pipe"># …</span><br><br>  <span class="value">mon-service:</span><br>    <span class="flag">image:</span> <span class="value">mon-compte/mon-service:2.0.1</span><br>    <span class="flag">build:</span>                      <span class="pipe"># …</span><br>    <span class="flag">depends_on:</span><br>      <span class="pipe">-</span> <span class="value">mysql</span></code>
+      </div>
+      <div class="desc"><code>depends_on</code> définit l'<strong>ordre de démarrage</strong> : Compose lance d'abord <code>mysql</code>, puis <code>mon-service</code> qui en dépend (et les arrête dans l'ordre inverse avec <code>down</code>). C'est une liste YAML de noms de services. Lancer <code>docker compose up mon-service</code> démarre aussi automatiquement <code>mysql</code>.
+        <span class="note">Conseil : par défaut, Compose attend seulement que le <strong>conteneur</strong> MySQL soit démarré, pas que la base soit prête à accepter des connexions ; l'application Spring Boot peut donc échouer à se connecter pendant les premières secondes. Pour attendre vraiment, ajoute un <code>healthcheck</code> au service <code>mysql</code> et utilise la forme longue <code>depends_on: mysql: condition: service_healthy</code>.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code>  <span class="value">mon-service:</span><br>    <span class="flag">image:</span> <span class="value">mon-compte/mon-service:2.0.1</span><br>    <span class="flag">build:</span>                      <span class="pipe"># …</span><br>    <span class="flag">environment:</span><br>      <span class="flag">SPRING_DATASOURCE_URL:</span> <span class="value">jdbc:mysql://mysql:3306/ma_base</span><br>      <span class="flag">SPRING_DATASOURCE_USERNAME:</span> <span class="value">${MYSQL_USER}</span><br>      <span class="flag">SPRING_DATASOURCE_PASSWORD:</span> <span class="value">${MYSQL_PASSWORD}</span><br>      <span class="flag">SPRING_PROFILES_ACTIVE:</span> <span class="value">prod</span><br>    <span class="flag">depends_on:</span><br>      <span class="flag">mysql:</span><br>        <span class="flag">condition:</span> <span class="value">service_healthy</span></code>
+      </div>
+      <div class="desc">Exemple : le microservice Spring Boot configuré dans Compose. Les variables <code>SPRING_DATASOURCE_*</code> remplacent la configuration de <code>application.properties</code> ; l'URL JDBC utilise le <strong>nom du service</strong> <code>mysql</code> comme hôte (réseau Compose, comme sur un bridge personnalisé), et les identifiants réutilisent les mêmes variables <code>${MYSQL_USER}</code> / <code>${MYSQL_PASSWORD}</code> que le service MySQL. <code>depends_on</code> est ici sous sa <strong>forme longue</strong> : <code>condition: service_healthy</code> fait attendre que MySQL soit réellement prêt avant de démarrer l'application.
+        <span class="note">Conseil : <code>service_healthy</code> exige un <code>healthcheck</code> sur le service <code>mysql</code>, sinon Compose refuse de démarrer. Exemple ci-dessous.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span><br>    <span class="flag">image:</span> <span class="value">mysql:latest</span>     <span class="pipe"># + environment, ports, volumes…</span><br>    <span class="flag">healthcheck:</span><br>      <span class="flag">test:</span> <span class="value">["CMD-SHELL", "mysql -h 127.0.0.1 -u $$MYSQL_USER -p$$MYSQL_PASSWORD -e 'SELECT 1'"]</span><br>      <span class="flag">interval:</span> <span class="value">10s</span><br>      <span class="flag">timeout:</span> <span class="value">5s</span><br>      <span class="flag">retries:</span> <span class="value">10</span><br>      <span class="flag">start_period:</span> <span class="value">30s</span></code>
+      </div>
+      <div class="desc"><code>healthcheck</code> définit une commande que Docker exécute régulièrement <strong>dans le conteneur</strong> pour savoir s'il est en bonne santé. Ici, <code>CMD-SHELL</code> lance la commande via le shell du conteneur : le client <code>mysql</code> se connecte et exécute <code>SELECT 1</code>, ce qui ne réussit que lorsque MySQL accepte vraiment les connexions. Le conteneur passe alors à l'état <code>healthy</code> (visible dans <code>docker ps</code>), ce qu'attend <code>condition: service_healthy</code>. Les réglages : <code>interval</code> = délai entre deux tests (30 s par défaut), <code>timeout</code> = durée maximale d'un test, <code>retries</code> = nombre d'échecs consécutifs avant l'état <code>unhealthy</code>, <code>start_period</code> = délai de démarrage pendant lequel les échecs ne sont pas comptés (le temps que MySQL s'initialise).
+        <span class="note">Conseil : le <code>$$</code> est volontaire : il empêche Compose de remplacer la variable au lancement, et le shell du conteneur la lit dans son propre environnement (<code>MYSQL_USER</code>, <code>MYSQL_PASSWORD</code>).</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="plain">export</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span>          <span class="pipe"># Linux, macOS, Git Bash</span><br><span class="plain">export</span> <span class="value">MYSQL_USER=app_user</span><br><span class="plain">export</span> <span class="value">MYSQL_PASSWORD=app_password</span><br><span class="plain">$env:</span><span class="value">MYSQL_ROOT_PASSWORD="root_password"</span>        <span class="pipe"># PowerShell (idem pour les autres)</span><br><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span>                              <span class="pipe"># lance les services avec ces valeurs</span></code>
       </div>
       <div class="desc">Définit dans le terminal une variable que Compose utilisera pour remplacer <code>${MYSQL_ROOT_PASSWORD}</code>. La syntaxe dépend du shell : <code>export</code> sous Linux, macOS et Git Bash ; <code>$env:</code> en PowerShell (valeur entre guillemets). Ici, les trois variables référencées dans le fichier Compose ci-dessus sont définies une par une, puis on lance <code>docker compose up</code> <strong>depuis ce même terminal</strong>.
@@ -1178,6 +1232,42 @@
       </div>
       <div class="desc">Crée et démarre tous les services décrits dans le fichier (réseau, volumes, conteneurs), en téléchargeant ou construisant les images si nécessaire. À lancer depuis le dossier qui contient <code>docker-compose.yaml</code>.
         <span class="note">Conseil : ajoute <code>-d</code> pour lancer en arrière-plan, comme avec <code>docker run</code>. L'ancienne syntaxe <code>docker-compose up</code> (avec un tiret) fonctionne encore sur certaines installations.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span> <span class="flag">-d</span> <span class="flag">--build</span></code>
+      </div>
+      <div class="desc">La commande du quotidien pendant le développement : <code>--build</code> <strong>reconstruit</strong> les images des services qui ont une section <code>build</code> (pour prendre en compte les dernières modifications du code), puis <code>-d</code> démarre l'ensemble <strong>en arrière-plan</strong> et rend la main au terminal. Les services basés sur une image téléchargée (ex. <code>mysql</code>) ne sont pas reconstruits.
+        <span class="note">Conseil : en mode <code>-d</code>, suis les logs avec <code>docker compose logs -f</code> (ou <code>docker compose logs -f &lt;service&gt;</code> pour un seul service), et vérifie l'état des conteneurs avec <code>docker compose ps</code>.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span> <span class="flag">-d</span> <span class="flag">--pull</span> <span class="value">always</span></code>
+      </div>
+      <div class="desc">Démarre les services en arrière-plan en <strong>retéléchargeant d'abord les images</strong> depuis le registre, même si elles sont déjà présentes en local. Utile pour récupérer la dernière version publiée d'une image au même tag (ex. <code>mysql:latest</code>, ou <code>mon-compte/mon-service:2.0.1</code> republiée sur Docker Hub), typiquement sur un serveur de déploiement.
+        <span class="note">Conseil : les valeurs possibles sont <code>always</code> (toujours télécharger), <code>missing</code> (valeur par défaut : seulement si l'image est absente) et <code>never</code> (n'utiliser que les images locales). Pour un service avec <code>build</code>, c'est plutôt <code>--build</code> qui sert à prendre en compte le code local.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">build</span></code>
+      </div>
+      <div class="desc"><strong>Construit uniquement</strong> les images des services qui ont une section <code>build</code>, sans créer ni démarrer de conteneur. Les images reçoivent les noms définis par <code>image</code> et <code>tags</code>. Pratique pour vérifier que le build passe, ou pour préparer les images avant un <code>docker compose push</code> ; un <code>docker compose up</code> lancé ensuite les utilisera directement.
+        <span class="note">Conseil : <code>docker compose build &lt;service&gt;</code> ne construit qu'un service.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">build</span> <span class="flag">--no-cache</span></code>
+      </div>
+      <div class="desc">Reconstruit les images <strong>entièrement</strong>, sans réutiliser les couches mises en cache lors des builds précédents : chaque instruction du Dockerfile est réexécutée (téléchargement des dépendances Maven, compilation…). La sortie indique le nombre d'images à construire, ex. <code>Building (0/1)</code> pour un seul service avec <code>build</code>.
+        <span class="note">Conseil : plus lent qu'un build normal, à réserver aux cas où le cache donne un résultat inattendu (dépendance mise à jour non prise en compte, build qui semble ignorer une modification…).</span>
       </div>
     </div>
 
