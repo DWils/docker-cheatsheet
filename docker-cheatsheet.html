@@ -1137,6 +1137,15 @@
     <div class="card">
       <div class="cmd-row">
         <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
+        <code><span class="sub">services:</span><br>  <span class="value">mysql:</span><br>    <span class="flag">container_name:</span> <span class="value">mysql-server</span><br>    <span class="flag">image:</span> <span class="value">mysql:latest</span><br>    <span class="flag">environment:</span> <span class="pipe"># …</span><br>    <span class="flag">ports:</span><br>      <span class="pipe">-</span> <span class="value">"3306:3306"</span><br>  <span class="pipe">#mon-service:</span></code>
+      </div>
+      <div class="desc"><code>ports</code> publie des ports du conteneur sur l'hôte, comme <code>-p</code> avec <code>docker run</code>, au format <code>"&lt;port hôte&gt;:&lt;port conteneur&gt;"</code>. Ici, MySQL devient joignable depuis la machine sur <code>localhost:3306</code>. <code>ports</code> est une <strong>liste YAML</strong> : chaque port s'écrit sur sa propre ligne, précédé d'un tiret.
+        <span class="note">Conseil : garde les guillemets autour de <code>"3306:3306"</code>, car YAML peut mal interpréter certaines valeurs contenant <code>:</code>. Inutile de publier un port pour que deux services du même fichier se parlent : ils se joignent déjà par leur nom (<code>mysql:3306</code>). Si le port 3306 est déjà pris sur la machine, change seulement le port hôte : <code>"3307:3306"</code>.</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cmd-row">
+        <div class="cmd-toolbar"><button class="copy-btn" onclick="copyCmd(this)">Copier</button></div>
         <code><span class="plain">export</span> <span class="value">MYSQL_ROOT_PASSWORD=root_password</span>          <span class="pipe"># Linux, macOS, Git Bash</span><br><span class="plain">export</span> <span class="value">MYSQL_USER=app_user</span><br><span class="plain">export</span> <span class="value">MYSQL_PASSWORD=app_password</span><br><span class="plain">$env:</span><span class="value">MYSQL_ROOT_PASSWORD="root_password"</span>        <span class="pipe"># PowerShell (idem pour les autres)</span><br><span class="docker">docker</span> <span class="sub">compose</span> <span class="sub">up</span>                              <span class="pipe"># lance les services avec ces valeurs</span></code>
       </div>
       <div class="desc">Définit dans le terminal une variable que Compose utilisera pour remplacer <code>${MYSQL_ROOT_PASSWORD}</code>. La syntaxe dépend du shell : <code>export</code> sous Linux, macOS et Git Bash ; <code>$env:</code> en PowerShell (valeur entre guillemets). Ici, les trois variables référencées dans le fichier Compose ci-dessus sont définies une par une, puis on lance <code>docker compose up</code> <strong>depuis ce même terminal</strong>.
